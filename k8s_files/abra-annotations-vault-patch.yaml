@@ -1,0 +1,7 @@
+spec:
+    template:
+      metadata:
+        annotations:
+          vault.hashicorp.com/agent-inject: "true"
+          vault.hashicorp.com/agent-inject-secret-creds: "/app/dev/data/abra"
+          vault.hashicorp.com/role: "app"

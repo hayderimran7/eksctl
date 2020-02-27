@@ -1,0 +1,1 @@
+kubectl --namespace abra-dev-blue patch deployment abra-dev-blue-abra-app   --patch "$(cat abra-annotations-vault-patch.yaml)"

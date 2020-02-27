@@ -1,0 +1,97 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rt-reg
+  namespace: abra-local
+type: kubernetes.io/dockerconfigjson
+data:
+  .dockerconfigjson: eyJhdXRocyI6eyJkb2NrZXItbG9jYWwucmVnaXN0cnkucHJvZC54b2x2LmFwcCI6eyJ1c2VybmFtZSI6ImludGVncmF0aW9uLXVzZXItamVua2lucyIsInBhc3N3b3JkIjoiQUtDcDVkS1BXVFFzUjJzY282ZERiMjg0RVNlTTNWeWhqYmFYaDZoRDljU2dzZmc3a21lemJVRk5rbng4Y2gxRVdqZjV2Sk1WSiIsImF1dGgiOiJhVzUwWldkeVlYUnBiMjR0ZFhObGNpMXFaVzVyYVc1ek9rRkxRM0ExWkV0UVYxUlJjMUl5YzJOdk5tUkVZakk0TkVWVFpVMHpWbmxvYW1KaFdHZzJhRVE1WTFObmMyWm5OMnR0WlhwaVZVWk9hMjU0T0dOb01VVlhhbVkxZGtwTlZrbz0ifX19
+---
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: abra-local
+  labels:
+    name: abra-local-ns
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: postgres-pv
+  namespace: abra-local
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 2Gi
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: /data/postgres-pv
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: postgres-pvc
+  namespace: abra-local
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  volumeName: postgres-pv
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-deployment
+  namespace: abra-local
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-container
+  template:
+    metadata:
+      labels:
+        app: postgres-container
+        tier: backend
+    spec:
+      containers:
+        - name: postgres-container
+          image: postgres:9.6-alpine
+          env:
+            - name: POSTGRES_USER
+              value: "postgres"
+            - name: POSTGRES_PASSWORD
+              value: "password"
+            - name: POSTGRES_DB
+              value: "postgres"
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - name: postgres-volume-mount
+              mountPath: /var/lib/postgresql/data
+
+      volumes:
+        - name: postgres-volume-mount
+          persistentVolumeClaim:
+            claimName: postgres-pvc
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: postgresql
+  namespace: abra-local
+spec:
+  selector:
+    app: postgres-container
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432

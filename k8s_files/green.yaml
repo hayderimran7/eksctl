@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: abra-local-new
+  namespace: abra-local
+  labels:
+    name: abra-local
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: abra-local
+  template:
+    metadata:
+      name: abra-local
+      labels:
+        name: abra-local
+        version: "1.11"
+    spec:
+      imagePullSecrets:
+        - name: rt-reg
+      containers:
+        - name: abra-local
+          image: docker-local.registry.prod.xolv.app/abra-local
+          ports:
+            - containerPort: 80
+          command: ["/bin/sh"]
+          args: ["-c", "nginx && java -javaagent:newrelic/newrelic.jar -XX:+UseConcMarkSweepGC -Dfile.encoding=UTF-8 -Xms2048m -Xmx2048m -jar app-1.5.0.jar"]
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: "local"
+            - name: JDBC_URL
+              value: "jdbc:postgresql://postgresql:5432/postgres"
+            - name: JDBC_USERNAME
+              value: "postgres"
+            - name: JDBC_PASSWORD
+              value: "password"
+            - name: REACT_APP_BACKEND_API_BASE_URL
+              value: "http://localhost:5000/rest"
